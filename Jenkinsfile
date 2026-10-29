@@ -8,58 +8,56 @@ pipeline {
 
     stages {
 
-        stage(' Checkout') {
+        stage('Checkout') {
             steps {
-                echo "Récupération du code depuis GitHub..."
+                echo 'Recuperation du code depuis GitHub...'
                 checkout scm
             }
         }
 
-        stage(' Lint & Qualité') {
+        stage('Lint & Qualite') {
+            // ✅ On utilise un conteneur Python temporaire — plus besoin de python3 sur Jenkins !
+            agent {
+                docker {
+                    image 'python:3.12-slim'
+                    reuseNode true
+                }
+            }
             steps {
-                echo "Vérification de la syntaxe Python..."
-                sh '''
-                    python3 -m py_compile src/app.py
-                    echo "Syntaxe OK "
-                '''
+                echo 'Verification de la syntaxe Python...'
+                sh 'python3 -m py_compile src/app.py && echo "Syntaxe OK"'
             }
         }
 
-        stage(' Docker Build') {
+        stage('Docker Build') {
             steps {
-                echo "Construction de l'image Docker ${IMAGE_NAME}:${IMAGE_TAG}..."
+                echo "Construction de l image ${IMAGE_NAME}:${IMAGE_TAG}..."
                 sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
                 sh "docker images ${IMAGE_NAME}"
             }
         }
 
-        stage(' Deploy Staging') {
+        stage('Deploy Staging') {
             steps {
-                echo "Déploiement du conteneur en staging..."
                 sh """
                     docker rm -f staging-flask-app || true
                     docker run -d --name staging-flask-app -p 5001:5000 ${IMAGE_NAME}:${IMAGE_TAG}
                     sleep 3
-                    curl -sf http://localhost:5001/health || exit 1
-                    echo "Health check OK "
+                    curl -sf http://localhost:5001/health && echo 'Health check OK'
                 """
             }
         }
 
-        stage(' Cleanup') {
+        stage('Cleanup') {
             steps {
-                sh "docker rm -f staging-flask-app || true"
-                echo "Nettoyage terminé "
+                sh 'docker rm -f staging-flask-app || true'
+                echo 'Nettoyage termine'
             }
         }
     }
 
     post {
-        success {
-            echo " Pipeline réussi ! Image ${IMAGE_NAME}:${IMAGE_TAG} prête."
-        }
-        failure {
-            echo " Pipeline échoué. Consultez les logs ci-dessus."
-        }
+        success { echo "Pipeline reussi ! Image ${IMAGE_NAME}:${IMAGE_TAG} prete." }
+        failure { echo 'Pipeline echoue. Consultez les logs.' }
     }
 }
