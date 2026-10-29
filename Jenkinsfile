@@ -18,7 +18,7 @@ pipeline {
         stage('Lint & Qualite') {
             steps {
                 echo 'Verification de la syntaxe Python...'
-                sh 'python3 -m py_compile src/app.py && echo "Syntaxe OK ✅"'
+                sh 'python3 -m py_compile src/app.py && echo "Syntaxe OK"'
             }
         }
 
@@ -36,7 +36,7 @@ pipeline {
                     docker rm -f staging-flask-app || true
                     docker run -d --name staging-flask-app -p 5001:5000 ${IMAGE_NAME}:${IMAGE_TAG}
                     sleep 3
-                    curl -sf http://localhost:5001/health && echo 'Health check OK ✅'
+                    curl -sf http://host.docker.internal:5001/health && echo 'Health check OK'
                 """
             }
         }
@@ -44,13 +44,13 @@ pipeline {
         stage('Cleanup') {
             steps {
                 sh 'docker rm -f staging-flask-app || true'
-                echo 'Nettoyage termine ✅'
+                echo 'Nettoyage termine'
             }
         }
     }
 
     post {
-        success { echo "✅ Pipeline reussi ! Image ${IMAGE_NAME}:${IMAGE_TAG} prete." }
-        failure { echo "❌ Pipeline echoue. Consultez les logs ci-dessus." }
+        success { echo "Pipeline reussi ! Image ${IMAGE_NAME}:${IMAGE_TAG} prete." }
+        failure { echo "Pipeline echoue. Consultez les logs ci-dessus." }
     }
 }
