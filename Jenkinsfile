@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    // ✅ Déclenchement automatique à chaque push GitHub reçu via le Webhook
+    triggers {
+        githubPush()
+    }
+
     environment {
         IMAGE_NAME = 'flask-task-app'
         IMAGE_TAG  = "v${BUILD_NUMBER}"
